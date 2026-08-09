@@ -4,8 +4,9 @@ import '../core/app_colors.dart';
 
 // import 'package:waste_tracker/features/jiaqin/bins/bin_list_screen.dart';
 // import 'package:waste_tracker/features/keanwei/wastelogs/wastelog_create_screen.dart';
-// import 'keanwei/wastelogs/wastelog_list_screen.dart';
+import 'logs/access_log_list_screen.dart';
 import 'auth/profile_screen.dart';
+import 'reports/reports_screen.dart';
 // import 'zijie/goals/goal_plan_screen.dart';
 
 // ── Placeholders for WIP modules ────────────────────────────
@@ -46,7 +47,7 @@ class _Placeholder extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 38, color: color),
@@ -89,8 +90,8 @@ class _MainShellState extends State<MainShell> {
   final List<Widget> _screens = const [
     Placeholder(),
     Placeholder(),
-    Placeholder(),
-    Placeholder(),
+    AccessLogListScreen(),
+    ReportsScreen(),
     Placeholder(),
     ProfileScreen()
   ];

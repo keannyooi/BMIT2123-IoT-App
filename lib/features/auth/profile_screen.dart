@@ -150,25 +150,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
-        actions: [
-          // App icon in appbar like design
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.eco,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
-        ],
       ),
       body: auth.loadingProfile
           ? const Center(child: CircularProgressIndicator())
