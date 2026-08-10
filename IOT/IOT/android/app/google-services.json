@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "725518502362",
+    "project_id": "smart-medicine-cabinet-iot",
+    "storage_bucket": "smart-medicine-cabinet-iot.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:725518502362:android:d3743670cac8c17d04d8e3",
+        "android_client_info": {
+          "package_name": "my.edu.tarumt.iot_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzPIhm4iknxNbSizKhQ3layh9ogt2GcXU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
