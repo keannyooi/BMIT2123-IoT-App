@@ -7,6 +7,8 @@ import '../core/app_colors.dart';
 import 'logs/access_log_list_screen.dart';
 import 'auth/profile_screen.dart';
 import 'reports/reports_screen.dart';
+import 'cabinets/screens/cabinets_list_screen.dart';
+import 'dashboard/dashboard_screen.dart';
 // import 'zijie/goals/goal_plan_screen.dart';
 
 // ── Placeholders for WIP modules ────────────────────────────
@@ -88,8 +90,8 @@ class _MainShellState extends State<MainShell> {
 
   // Tab order: Dashboard, Cabinets, Logs, Reports, Notifications, Profile
   final List<Widget> _screens = const [
-    Placeholder(),
-    Placeholder(),
+    DashboardScreen(),
+    CabinetsListScreen(),
     AccessLogListScreen(),
     ReportsScreen(),
     Placeholder(),

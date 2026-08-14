@@ -282,6 +282,82 @@ class AppProgressBar extends StatelessWidget {
   }
 }
 
+// ─── Dashed Border Box ──────────────────────────────────────────
+class DashedBorderBox extends StatelessWidget {
+  final Widget child;
+  final double borderRadius;
+  final Color color;
+  final double strokeWidth;
+  final EdgeInsetsGeometry padding;
+
+  const DashedBorderBox({
+    super.key,
+    required this.child,
+    this.borderRadius = 16,
+    this.color = AppColors.divider,
+    this.strokeWidth = 1.5,
+    this.padding = const EdgeInsets.all(24),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _DashedRRectPainter(
+        radius: borderRadius,
+        color: color,
+        strokeWidth: strokeWidth,
+      ),
+      child: Padding(padding: padding, child: child),
+    );
+  }
+}
+
+class _DashedRRectPainter extends CustomPainter {
+  final double radius;
+  final Color color;
+  final double strokeWidth;
+
+  const _DashedRRectPainter({
+    required this.radius,
+    required this.color,
+    required this.strokeWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(radius),
+    );
+    final path = Path()..addRRect(rrect);
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    const dashWidth = 6.0;
+    const dashSpace = 4.0;
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final next = distance + dashWidth;
+        canvas.drawPath(
+          metric.extractPath(distance, next.clamp(0.0, metric.length)),
+          paint,
+        );
+        distance = next + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRRectPainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.radius != radius ||
+        oldDelegate.strokeWidth != strokeWidth;
+  }
+}
+
 // ─── Snackbar Helpers ─────────────────────────────────────────
 void showSuccessSnack(BuildContext context, String msg) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(

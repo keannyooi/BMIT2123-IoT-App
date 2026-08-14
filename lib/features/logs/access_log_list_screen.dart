@@ -38,7 +38,7 @@ class _AccessLogListScreenState extends State<AccessLogListScreen> {
 
       final uid = context.read<AuthProvider>().userId;
       if (uid != null) {
-        logsProvider.fetchAccessLogs("CAB0001");
+        logsProvider.fetchAccessLogs("CAB0001"); // TODO: change to current cabinet id
       }
     });
   }

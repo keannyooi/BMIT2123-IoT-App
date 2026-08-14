@@ -4,10 +4,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'core/app_theme.dart';
 
 import 'features/main_shell.dart';
-import 'features/auth/auth_provider.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/reset_password_screen.dart';
+
+import 'features/auth/auth_provider.dart';
 import 'features/logs/logs_provider.dart';
+import 'features/cabinets/cabinet_provider.dart';
 // import 'features/keanwei/wastelogs/wastetype_provider.dart';
 // import 'features/jiaqin/bins/bin_provider.dart';
 // import 'features/jiaqin/logistics/logistics_provider.dart';
@@ -29,11 +31,8 @@ class WasteTrackerApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        // ChangeNotifierProvider(create: (_) => GoalPlanProvider()),
         ChangeNotifierProvider(create: (_) => LogsProvider()),
-        // ChangeNotifierProvider(create: (_) => WasteTypeProvider()),
-        // ChangeNotifierProvider(create: (_) => BinProvider()),
-        // ChangeNotifierProvider(create: (_) => LogisticsProvider()),
+        ChangeNotifierProvider(create: (_) => CabinetProvider()),
       ],
       child: MaterialApp(
         title: 'iot_app',

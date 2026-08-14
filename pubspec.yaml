@@ -41,6 +41,7 @@ dependencies:
   firebase_auth: ^5.5.0
   cloud_firestore: ^5.6.2
   firebase_storage: ^12.4.2
+  fl_chart: ^0.70.2
   intl: any
   flutter_localizations:
     sdk: flutter

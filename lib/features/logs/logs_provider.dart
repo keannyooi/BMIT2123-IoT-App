@@ -93,6 +93,36 @@ class LogsProvider extends ChangeNotifier {
   String? _error;
   String? get error => _error;
 
+  // ── Fetch telemetry logs ───────────────────────────────────────────
+  Future<void> fetchTelemetryLogs(String cabinetId) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final snapshot = await _firestore
+          .collection('telemetryLogs')
+          .orderBy('timestamp', descending: true)
+          // .limit(100) // Limit to recent logs for reports
+          .get();
+
+      _telemetryLogs.clear();
+      _telemetryLogs.addAll(
+        snapshot.docs.map((doc) {
+          final data = doc.data();
+          return TelemetryLog.fromMap({
+            ...data,
+            'telemetryLogId': doc.id,
+          });
+        }),
+      );
+    } catch (e) {
+      _error = 'Failed to fetch telemetry logs: ${e.toString()}';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // ── Fetch access logs ──────────────────────────────────────────────
   Future<void> fetchAccessLogs(String cabinetId) async {
     _isLoading = true;
