@@ -7,7 +7,6 @@ import '../../../core/widgets.dart';
 import '../cabinet_provider.dart';
 import '../models/cabinet.dart';
 import '../../logs/logs_provider.dart';
-import '../../auth/auth_provider.dart';
 import 'environment_reading_tile.dart';
 
 /// Full detail view for a single cabinet, including live readings and the

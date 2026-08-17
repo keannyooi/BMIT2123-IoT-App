@@ -53,7 +53,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     setState(() {
       _isLoading = true;
-      _currentPage = 1;
     });
     
     if (_selectedReport == ReportType.environmental) {
@@ -61,7 +60,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     } else {
       await context.read<LogsProvider>().fetchAccessLogs(cabinetId);
     }
-    
+
     if (mounted) setState(() => _isLoading = false);
   }
 
@@ -830,7 +829,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             FutureBuilder<String>(
               future: log.imagePath.isEmpty 
                   ? Future.error('No image') 
-                  : FirebaseStorage.instance.ref('cabinetImages/${log.cabinetId}/${log.imagePath}').getDownloadURL(),
+                  : FirebaseStorage.instance.ref('cabinet-images/${log.cabinetId}/${log.imagePath}').getDownloadURL(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));

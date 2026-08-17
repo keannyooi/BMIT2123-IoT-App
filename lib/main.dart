@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'core/app_theme.dart';
 
+import 'local_notification_service.dart';
 import 'features/main_shell.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/reset_password_screen.dart';
@@ -10,15 +12,24 @@ import 'features/auth/reset_password_screen.dart';
 import 'features/auth/auth_provider.dart';
 import 'features/logs/logs_provider.dart';
 import 'features/cabinets/cabinet_provider.dart';
-// import 'features/keanwei/wastelogs/wastetype_provider.dart';
-// import 'features/jiaqin/bins/bin_provider.dart';
-// import 'features/jiaqin/logistics/logistics_provider.dart';
-// import 'features/zijie/goals/goal_plan_provider.dart';
+import 'features/notifs/notification_provider.dart';
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // If you're going to use other Firebase services in the background, such as Firestore,
+  // make sure you call `initializeApp` before using other Firebase services.
+  await Firebase.initializeApp();
+  debugPrint("Handling a background message: ${message.messageId}");
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp();
+  await LocalNotificationService.instance.initialize();
+  
+  // Set the background messaging handler early on, as a named top-level function
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   runApp(const WasteTrackerApp());
 }
@@ -33,6 +44,7 @@ class WasteTrackerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => LogsProvider()),
         ChangeNotifierProvider(create: (_) => CabinetProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
       ],
       child: MaterialApp(
         title: 'iot_app',

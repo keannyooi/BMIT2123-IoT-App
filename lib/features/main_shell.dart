@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/app_colors.dart';
 
-// import 'package:waste_tracker/features/jiaqin/bins/bin_list_screen.dart';
-// import 'package:waste_tracker/features/keanwei/wastelogs/wastelog_create_screen.dart';
 import 'logs/access_log_list_screen.dart';
 import 'auth/profile_screen.dart';
 import 'reports/reports_screen.dart';
 import 'cabinets/screens/cabinets_list_screen.dart';
 import 'dashboard/dashboard_screen.dart';
-// import 'zijie/goals/goal_plan_screen.dart';
+import 'notifs/notification_screen.dart';
 
 // ── Placeholders for WIP modules ────────────────────────────
 class Placeholder extends StatelessWidget {
@@ -94,7 +92,7 @@ class _MainShellState extends State<MainShell> {
     CabinetsListScreen(),
     AccessLogListScreen(),
     ReportsScreen(),
-    Placeholder(),
+    NotificationScreen(),
     ProfileScreen()
   ];
 
