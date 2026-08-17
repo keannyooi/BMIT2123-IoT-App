@@ -45,6 +45,7 @@ dependencies:
   intl: any
   flutter_localizations:
     sdk: flutter
+  flutter_blue_plus: ^2.3.12
 
 dev_dependencies:
   flutter_test:

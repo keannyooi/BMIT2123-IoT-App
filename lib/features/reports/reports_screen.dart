@@ -24,20 +24,37 @@ class _ReportsScreenState extends State<ReportsScreen> {
   static const int _itemsPerPage = 5;
   ReportType _selectedReport = ReportType.activity;
   DateTime? _selectedDate;
+  String? _lastCabinetId;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _fetchData());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final cabinetId = context.read<AuthProvider>().profile?['cabinetId'];
+      _lastCabinetId = cabinetId;
+      if (cabinetId != null) {
+        _fetchData();
+      }
+    });
   }
 
   Future<void> _fetchData() async {
+    final auth = context.read<AuthProvider>();
+    final cabinetId = auth.profile?['cabinetId'];
+
+    if (cabinetId == null) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _currentPage = 1;
     });
-    final auth = context.read<AuthProvider>();
-    final cabinetId = auth.profile?['cabinetId'] ?? 'CAB0001';
     
     if (_selectedReport == ReportType.environmental) {
       await context.read<LogsProvider>().fetchTelemetryLogs(cabinetId);
@@ -52,7 +69,27 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Widget build(BuildContext context) {
     final logsProvider = context.watch<LogsProvider>();
     final auth = context.watch<AuthProvider>();
-    final cabinetId = auth.profile?['cabinetId'] ?? 'CAB0000';
+    final cabinetId = auth.profile?['cabinetId'];
+
+    if (cabinetId != _lastCabinetId) {
+      _lastCabinetId = cabinetId;
+      if (cabinetId != null) {
+        Future.microtask(() => _fetchData());
+      }
+    }
+
+    if (cabinetId == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: Text('Reports', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0,
+        ),
+        body: _buildNoCabinetState(),
+      );
+    }
 
     // 1. Get unique months available in logs
     final Map<String, DateTime> availableMonths = {};
@@ -112,7 +149,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       denied = totalAttempts - granted;
       ratio = totalAttempts == 0 ? 0.0 : (granted / totalAttempts * 100);
 
-      if (_selectedReport == ReportType.denied && filteredData.isNotEmpty) {
+      if (filteredData.isNotEmpty) {
         final counts = <String, int>{};
         for (var log in filteredData) {
           counts[(log as AccessLog).cardId] = (counts[log.cardId] ?? 0) + 1;
@@ -815,6 +852,31 @@ class _ReportsScreenState extends State<ReportsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildNoCabinetState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.kitchen, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            'No Cabinet Paired',
+            style: GoogleFonts.poppins(
+              color: AppColors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Please pair a cabinet to view reports',
+            style: GoogleFonts.poppins(color: AppColors.textSecondary),
+          ),
+        ],
       ),
     );
   }

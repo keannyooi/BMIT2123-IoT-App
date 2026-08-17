@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -21,20 +22,43 @@ class AuthProvider extends ChangeNotifier {
   bool _isRecoveringPassword = false;
   bool get isRecoveringPassword => _isRecoveringPassword;
 
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _profileSubscription;
+
   AuthProvider() {
     _auth.authStateChanges().listen((User? user) {
       debugPrint('Auth Change Event: ${user == null ? 'Signed Out' : 'Signed In'}');
 
       if (user != null) {
-        fetchProfile();
+        _startProfileListener(user.uid);
       } else {
+        _stopProfileListener();
         _profile = null;
         _isRecoveringPassword = false;
+        notifyListeners();
+      }
+    });
+
+    if (isLoggedIn) _startProfileListener(currentUser!.uid);
+  }
+
+  void _startProfileListener(String uid) {
+    _profileSubscription?.cancel();
+    _profileSubscription = _firestore.collection('users').doc(uid).snapshots().listen((doc) {
+      if (doc.exists) {
+        _profile = doc.data();
+      } else {
+        _profile = {
+          'name': currentUser?.displayName ?? currentUser?.email?.split('@').first ?? 'User',
+          'email': currentUser?.email,
+        };
       }
       notifyListeners();
     });
+  }
 
-    if (isLoggedIn) fetchProfile();
+  void _stopProfileListener() {
+    _profileSubscription?.cancel();
+    _profileSubscription = null;
   }
 
   // ── Sign In ────────────────────────────────────────────────
@@ -173,8 +197,15 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  @override
+  void dispose() {
+    _stopProfileListener();
+    super.dispose();
+  }
+
   // ── Sign Out ───────────────────────────────────────────────
   Future<void> signOut() async {
+    _stopProfileListener();
     await _auth.signOut();
     _profile = null;
     notifyListeners();

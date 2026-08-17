@@ -1,3 +1,4 @@
+import "dart:async";
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -86,6 +87,8 @@ class LogsProvider extends ChangeNotifier {
   final List<AccessLog> _accessLogs = [];
   List<AccessLog> get accessLogs => _accessLogs;
 
+  TelemetryLog? get latestTelemetry => _telemetryLogs.isNotEmpty ? _telemetryLogs.first : null;
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   bool _isLoading = false;
@@ -93,7 +96,91 @@ class LogsProvider extends ChangeNotifier {
   String? _error;
   String? get error => _error;
 
-  // ── Fetch telemetry logs ───────────────────────────────────────────
+  StreamSubscription? _telemetrySubscription;
+  StreamSubscription? _accessSubscription;
+
+  @override
+  void dispose() {
+    _telemetrySubscription?.cancel();
+    _accessSubscription?.cancel();
+    super.dispose();
+  }
+
+  // ── Subscribe to telemetry logs ───────────────────────────────────────────
+  void subscribeToTelemetryLogs(String cabinetId) {
+    _telemetrySubscription?.cancel();
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    _telemetrySubscription = _firestore
+        .collection('telemetryLogs')
+        .where('cabinetId', isEqualTo: cabinetId)
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      _telemetryLogs.clear();
+      _telemetryLogs.addAll(
+        snapshot.docs.map((doc) {
+          final data = doc.data();
+          return TelemetryLog.fromMap({
+            ...data,
+            'telemetryLogId': doc.id,
+          });
+        }),
+      );
+      _isLoading = false;
+      notifyListeners();
+    }, onError: (e) {
+      _error = 'Failed to listen to telemetry logs: ${e.toString()}';
+      _isLoading = false;
+      notifyListeners();
+    });
+  }
+
+  // ── Subscribe to access logs ──────────────────────────────────────────────
+  void subscribeToAccessLogs(String cabinetId) {
+    _accessSubscription?.cancel();
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    _accessSubscription = _firestore
+        .collection('accessLogs')
+        .where('cabinetId', isEqualTo: cabinetId)
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .listen((snapshot) {
+      _accessLogs.clear();
+      _accessLogs.addAll(
+        snapshot.docs.map((doc) {
+          final data = doc.data();
+          return AccessLog.fromMap({
+            ...data,
+            'accessLogId': doc.id,
+          });
+        }),
+      );
+      _isLoading = false;
+      notifyListeners();
+    }, onError: (e) {
+      _error = 'Failed to listen to access logs: ${e.toString()}';
+      _isLoading = false;
+      notifyListeners();
+    });
+  }
+
+  void unsubscribeFromTelemetryLogs() {
+    _telemetrySubscription?.cancel();
+    _telemetrySubscription = null;
+  }
+
+  void unsubscribeFromAccessLogs() {
+    _accessSubscription?.cancel();
+    _accessSubscription = null;
+  }
+
+  // ── Fetch telemetry logs (One-time) ───────────────────────────────────────────
   Future<void> fetchTelemetryLogs(String cabinetId) async {
     _isLoading = true;
     _error = null;
@@ -101,8 +188,8 @@ class LogsProvider extends ChangeNotifier {
     try {
       final snapshot = await _firestore
           .collection('telemetryLogs')
+          .where('cabinetId', isEqualTo: cabinetId)
           .orderBy('timestamp', descending: true)
-          // .limit(100) // Limit to recent logs for reports
           .get();
 
       _telemetryLogs.clear();
@@ -123,6 +210,35 @@ class LogsProvider extends ChangeNotifier {
     }
   }
 
+  // ── Fetch latest telemetry log ───────────────────────────────────────────
+  Future<TelemetryLog?> fetchLatestTelemetryLog(String cabinetId) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final snapshot = await _firestore
+          .collection('telemetryLogs')
+          .where('cabinetId', isEqualTo: cabinetId)
+          .orderBy('timestamp', descending: true)
+          .limit(1)
+          .get();
+      if (snapshot.docs.isEmpty) {
+        return null;
+      }
+
+      final data = snapshot.docs.first.data();
+      return TelemetryLog.fromMap({
+        ...data
+      });
+    } catch (e) {
+      _error = 'Failed to fetch telemetry logs: ${e.toString()}';
+      return null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   // ── Fetch access logs ──────────────────────────────────────────────
   Future<void> fetchAccessLogs(String cabinetId) async {
     _isLoading = true;
@@ -131,8 +247,7 @@ class LogsProvider extends ChangeNotifier {
     try {
       final snapshot = await _firestore
           .collection('accessLogs')
-          // .where('isTestData', isEqualTo: true)
-          // .where('cabinetId', isEqualTo: cabinetId)
+          .where('cabinetId', isEqualTo: cabinetId)
           .orderBy('timestamp', descending: true)
           .get();
 

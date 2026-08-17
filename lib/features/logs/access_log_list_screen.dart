@@ -23,6 +23,7 @@ class _AccessLogListScreenState extends State<AccessLogListScreen> {
 
   AccessLogFilter? _currentFilter;
   String _sortBy = 'time_desc';
+  String? _lastCabinetId;
 
   @override
   void initState() {
@@ -34,11 +35,12 @@ class _AccessLogListScreenState extends State<AccessLogListScreen> {
     _pageController = PageController(initialPage: _initialPage);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final logsProvider = context.read<LogsProvider>();
+      final auth = context.read<AuthProvider>();
+      final cabinetId = auth.profile?['cabinetId'];
+      _lastCabinetId = cabinetId;
 
-      final uid = context.read<AuthProvider>().userId;
-      if (uid != null) {
-        logsProvider.fetchAccessLogs("CAB0001"); // TODO: change to current cabinet id
+      if (cabinetId != null) {
+        context.read<LogsProvider>().subscribeToAccessLogs(cabinetId);
       }
     });
   }
@@ -49,8 +51,7 @@ class _AccessLogListScreenState extends State<AccessLogListScreen> {
     super.dispose();
   }
 
-  List<AccessLog> _getFilteredLogsForDate(DateTime date) {
-    final allAccessLogs = context.read<LogsProvider>().accessLogs;
+  List<AccessLog> _getFilteredLogsForDate(List<AccessLog> allAccessLogs, DateTime date) {
     List<AccessLog> accessLogs = allAccessLogs.where((log) {
       final ld = log.timestamp;
       return ld.year == date.year && ld.month == date.month && ld.day == date.day;
@@ -112,6 +113,28 @@ class _AccessLogListScreenState extends State<AccessLogListScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<LogsProvider>();
+    final auth = context.watch<AuthProvider>();
+    final cabinetId = auth.profile?['cabinetId'];
+
+    if (cabinetId != _lastCabinetId) {
+      _lastCabinetId = cabinetId;
+      if (cabinetId != null) {
+        Future.microtask(() => context.read<LogsProvider>().subscribeToAccessLogs(cabinetId));
+      } else {
+        Future.microtask(() => context.read<LogsProvider>().unsubscribeFromAccessLogs());
+      }
+    }
+
+    if (cabinetId == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: const Text('Cabinet Access Logs'),
+          elevation: 0,
+        ),
+        body: _buildNoCabinetState(),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -259,7 +282,7 @@ class _AccessLogListScreenState extends State<AccessLogListScreen> {
                     },
                     itemBuilder: (context, index) {
                       final date = _baseDate.add(Duration(days: index - _initialPage));
-                      final logs = _getFilteredLogsForDate(date);
+                      final logs = _getFilteredLogsForDate(provider.accessLogs, date);
 
                       return AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
@@ -497,6 +520,31 @@ class _AccessLogListScreenState extends State<AccessLogListScreen> {
           Text(
             'No logs for this date',
             style: GoogleFonts.poppins(color: Colors.grey, fontSize: 16),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoCabinetState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.kitchen, size: 64, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            'No Cabinet Paired',
+            style: GoogleFonts.poppins(
+              color: AppColors.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Please pair a cabinet to view access logs',
+            style: GoogleFonts.poppins(color: AppColors.textSecondary),
           ),
         ],
       ),

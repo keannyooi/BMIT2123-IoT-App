@@ -1,11 +1,11 @@
-/// Represents a smart cabinet found while scanning for nearby devices
-/// during the pairing flow.
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+
 class DiscoveredCabinetDevice {
-  final String cabinetId;
+  final BluetoothDevice device;
   final int signalStrength; // 1 (weak) .. 4 (strong)
 
   const DiscoveredCabinetDevice({
-    required this.cabinetId,
-    required this.signalStrength, // TODO: remove
+    required this.device,
+    required this.signalStrength,
   });
 }

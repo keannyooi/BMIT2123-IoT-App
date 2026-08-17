@@ -6,6 +6,8 @@ import '../../../core/app_colors.dart';
 import '../../../core/widgets.dart';
 import '../cabinet_provider.dart';
 import '../models/cabinet.dart';
+import '../../logs/logs_provider.dart';
+import '../../auth/auth_provider.dart';
 import 'environment_reading_tile.dart';
 
 /// Full detail view for a single cabinet, including live readings and the
@@ -95,9 +97,28 @@ class CabinetDetailCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<CabinetProvider>();
+    final logsProvider = context.watch<LogsProvider>();
+    final latestTelemetry = logsProvider.latestTelemetry;
+    
     final locked = cabinet.locked;
     final refreshing = provider.isRefreshing(cabinet.id);
     final updatingLock = provider.isUpdatingLock(cabinet.id);
+
+    // Use live telemetry if it's more recent than the cabinet's cached reading
+    final temperature = latestTelemetry != null && 
+        (cabinet.lastUpdated == null || latestTelemetry.timestamp.isAfter(cabinet.lastUpdated!))
+        ? latestTelemetry.temperature 
+        : cabinet.temperature;
+        
+    final humidity = latestTelemetry != null && 
+        (cabinet.lastUpdated == null || latestTelemetry.timestamp.isAfter(cabinet.lastUpdated!))
+        ? latestTelemetry.humidity 
+        : cabinet.humidity;
+
+    final stockStatus = latestTelemetry != null && 
+        (cabinet.lastUpdated == null || latestTelemetry.timestamp.isAfter(cabinet.lastUpdated!))
+        ? latestTelemetry.stockStatus 
+        : cabinet.stockStatus;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,22 +173,15 @@ class CabinetDetailCard extends StatelessWidget {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _formatRegistered(cabinet.pairedAt),
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: AppColors.textHint,
+                        ),
+                      )
                     ],
-                  ),
-                ),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 18,
-                    vertical: 10,
-                  ),
-                  color: AppColors.background,
-                  child: Text(
-                    _formatRegistered(cabinet.pairedAt),
-                    style: GoogleFonts.poppins(
-                      fontSize: 11,
-                      color: AppColors.textHint,
-                    ),
                   ),
                 ),
               ],
@@ -193,7 +207,7 @@ class CabinetDetailCard extends StatelessWidget {
             IconButton(
               onPressed: refreshing
                   ? null
-                  : () => provider.refreshReadings(cabinet.id),
+                  : () => provider.refreshReadings(context.read<LogsProvider>(), cabinet.id),
               icon: refreshing
                   ? const SizedBox(
                       width: 18,
@@ -212,22 +226,34 @@ class CabinetDetailCard extends StatelessWidget {
               child: EnvironmentReadingTile(
                 icon: Icons.thermostat_rounded,
                 label: 'Temperature',
-                value: cabinet.temperature != null
-                    ? '${cabinet.temperature!.toStringAsFixed(0)}°C'
+                value: temperature != null
+                    ? '${temperature.toStringAsFixed(2)}°C'
                     : '--',
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(
               child: EnvironmentReadingTile(
                 icon: Icons.water_drop_rounded,
                 label: 'Humidity',
-                value: cabinet.humidity != null
-                    ? '${cabinet.humidity!.toStringAsFixed(0)}%'
+                value: humidity != null
+                    ? '${humidity.toStringAsFixed(2)}%'
                     : '--',
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: EnvironmentReadingTile(
+                icon: Icons.inventory_rounded,
+                label: 'Stock Status',
+                value: stockStatus.toUpperCase(),
+              ),
+            ),
+          ]
         ),
         const SizedBox(height: 28),
 

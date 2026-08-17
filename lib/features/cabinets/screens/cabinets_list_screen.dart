@@ -39,14 +39,14 @@ class CabinetsListScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      floatingActionButton: cabinets.isEmpty
-          ? null
-          : FloatingActionButton(
-              onPressed: () => _openFindCabinet(context),
-              backgroundColor: AppColors.primary,
-              tooltip: 'Connect a cabinet',
-              child: const Icon(Icons.add_rounded, color: Colors.white),
-            ),
+      // floatingActionButton: cabinets.isEmpty
+      //     ? null
+      //     : FloatingActionButton(
+      //         onPressed: () => _openFindCabinet(context),
+      //         backgroundColor: AppColors.primary,
+      //         tooltip: 'Connect a cabinet',
+      //         child: const Icon(Icons.add_rounded, color: Colors.white),
+      //       ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: provider.refreshCabinets,

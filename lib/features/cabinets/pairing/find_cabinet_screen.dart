@@ -102,13 +102,13 @@ class _FindCabinetScreenState extends State<FindCabinetScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        Text(
-                          'ID: ${device.cabinetId}',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
+                        // Text(
+                        //   'ID: ${device.cabinetId}',
+                        //   style: GoogleFonts.poppins(
+                        //     fontSize: 12,
+                        //     color: AppColors.textSecondary,
+                        //   ),
+                        // ),
                       ],
                     ),
                   ),
@@ -171,11 +171,13 @@ class _FindCabinetScreenState extends State<FindCabinetScreen> {
                     pairing = true;
                     error = null;
                   });
+
                   final err = await context.read<CabinetProvider>().pairCabinet(
-                        cabinetId: device.cabinetId,
+                        discoveredDevice: device,
                         name: nameCtrl.text.trim(),
                       );
                   if (!ctx.mounted) return;
+
                   setSheetState(() => pairing = false);
                   if (err != null) {
                     setSheetState(() => error = err);
@@ -301,7 +303,7 @@ class _FindCabinetScreenState extends State<FindCabinetScreen> {
         ),
         const SizedBox(height: 12),
         for (final device in _devices)
-          _DeviceTile(device: device, onTap: () => _openConnectSheet(device)),
+          _DeviceTile(discoveredDevice: device, onTap: () => _openConnectSheet(device)),
         const SizedBox(height: 12),
         Center(
           child: TextButton.icon(
@@ -317,10 +319,10 @@ class _FindCabinetScreenState extends State<FindCabinetScreen> {
 
 // ── Discovered Device Tile ──────────────────────────────────────
 class _DeviceTile extends StatelessWidget {
-  final DiscoveredCabinetDevice device;
+  final DiscoveredCabinetDevice discoveredDevice;
   final VoidCallback onTap;
 
-  const _DeviceTile({required this.device, required this.onTap});
+  const _DeviceTile({required this.discoveredDevice, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -354,7 +356,7 @@ class _DeviceTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    device.cabinetId,
+                    discoveredDevice.device.advName,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -369,7 +371,7 @@ class _DeviceTile extends StatelessWidget {
                         width: 4,
                         height: 6.0 + (i * 3),
                         decoration: BoxDecoration(
-                          color: i < device.signalStrength
+                          color: i < discoveredDevice.signalStrength
                               ? AppColors.primary
                               : AppColors.divider,
                           borderRadius: BorderRadius.circular(2),

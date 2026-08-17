@@ -5,6 +5,7 @@ class Cabinet {
   final String name;
   final String cabinetId;
   final bool locked;
+  final String stockStatus;
   final double? temperature;
   final double? humidity;
   final DateTime? pairedAt;
@@ -15,6 +16,7 @@ class Cabinet {
     required this.name,
     required this.cabinetId,
     required this.locked,
+    required this.stockStatus,
     this.temperature,
     this.humidity,
     this.pairedAt,
@@ -28,15 +30,17 @@ class Cabinet {
       name: data['name'] as String? ?? 'My Cabinet',
       cabinetId: data['cabinetId'] as String? ?? '',
       locked: data['locked'] as bool? ?? true,
+      stockStatus: data['stockStatus'] as String? ?? 'empty',
       temperature: (data['temperature'] as num?)?.toDouble(),
       humidity: (data['humidity'] as num?)?.toDouble(),
       pairedAt: (data['pairedAt'] as Timestamp?)?.toDate(),
-      lastUpdated: (data['lastUpdated'] as Timestamp?)?.toDate(),
+      lastUpdated: (data['lastUpdated'] as Timestamp?)?.toDate()
     );
   }
 
   Cabinet copyWith({
     bool? locked,
+    String? stockStatus,
     double? temperature,
     double? humidity,
     DateTime? lastUpdated,
@@ -46,6 +50,7 @@ class Cabinet {
       name: name,
       cabinetId: cabinetId,
       locked: locked ?? this.locked,
+      stockStatus: stockStatus ?? this.stockStatus,
       temperature: temperature ?? this.temperature,
       humidity: humidity ?? this.humidity,
       pairedAt: pairedAt,

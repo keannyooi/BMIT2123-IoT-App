@@ -2,10 +2,13 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import 'bluetooth_service.dart';
 import 'models/cabinet.dart';
 import 'models/discovered_device.dart';
+import '../logs/logs_provider.dart';
 
 class CabinetProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -78,33 +81,39 @@ class CabinetProvider extends ChangeNotifier {
   // method out for real hardware discovery (e.g. via flutter_blue_plus)
   // once the device-side pairing flow is defined.
   Future<List<DiscoveredCabinetDevice>> scanForCabinets() async {
-    await Future.delayed(const Duration(seconds: 2));
-    final count = 1 + _random.nextInt(3);
-    return List.generate(count, (_) {
-      final code = 1000 + _random.nextInt(9000);
-      return DiscoveredCabinetDevice(
-        cabinetId: 'CAB$code',
-        signalStrength: 2 + _random.nextInt(3),
-      );
-    });
+    return await BLEService.instance.scanForCabinets();
   }
 
   // ── Pair a newly discovered cabinet ───────────────────────────
   Future<String?> pairCabinet({
-    required String cabinetId,
+    required DiscoveredCabinetDevice discoveredDevice,
     required String name,
   }) async {
+    // first get the cabinet ID through BLE
+    final cabinetId = await BLEService.instance.connect(discoveredDevice.device);
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (cabinetId == null) return 'Failed to retrieve Cabinet ID from device.';
+
     try {
       await _cabinetsRef.doc(cabinetId).set({
         'name': name,
         'cabinetId': cabinetId,
         'locked': true,
+        'stockStatus': 'empty',
         'temperature': 22 + _random.nextDouble() * 8,
         'humidity': 45 + _random.nextDouble() * 30,
         'pairedAt': FieldValue.serverTimestamp(),
         'lastUpdated': FieldValue.serverTimestamp(),
       });
-      await refreshCabinets();
+
+      if (userId != null) {
+        await _firestore.collection('users').doc(userId).update({
+          'cabinetId': cabinetId,
+        });
+      }
+
+      notifyListeners();
       return null;
     } catch (e) {
       if (e is FirebaseException && e.code == 'permission-denied') {
@@ -115,16 +124,22 @@ class CabinetProvider extends ChangeNotifier {
   }
 
   // ── Simulate pulling the latest sensor readings ──────────────
-  Future<void> refreshReadings(String cabinetId) async {
+  Future<void> refreshReadings(LogsProvider logsProvider, String cabinetId) async {
     _refreshingIds.add(cabinetId);
     notifyListeners();
     try {
-      await Future.delayed(const Duration(milliseconds: 700));
-      final temperature = 20 + _random.nextDouble() * 12;
-      final humidity = 35 + _random.nextDouble() * 45;
+      final cabinet = cabinetById(cabinetId);
+      if (cabinet == null) return;
+
+      // first get the most recent telemetry log
+      final telemetryLog = await logsProvider.fetchLatestTelemetryLog(cabinetId);
+      if (telemetryLog == null) return;
+
+      // then update the readings
       await _cabinetsRef.doc(cabinetId).update({
-        'temperature': temperature,
-        'humidity': humidity,
+        'temperature': telemetryLog.temperature,
+        'humidity': telemetryLog.humidity,
+        'stockStatus': telemetryLog.stockStatus,
         'lastUpdated': FieldValue.serverTimestamp(),
       });
     } catch (_) {
@@ -143,8 +158,17 @@ class CabinetProvider extends ChangeNotifier {
         'locked': locked,
         'lastUpdated': FieldValue.serverTimestamp(),
       });
+
+      // send BLE command to lock cabinet
+      if (locked) {
+        await BLEService.instance.sendBLECommand(cabinetId, 'LOCK');
+      } else {
+        await BLEService.instance.sendBLECommand(cabinetId, 'UNLOCK');
+      }
+
       return null;
-    } catch (_) {
+    } catch (e) {
+      print(e);
       return 'Failed to update the cabinet lock status.';
     } finally {
       _updatingLockIds.remove(cabinetId);
@@ -155,8 +179,15 @@ class CabinetProvider extends ChangeNotifier {
   // ── Unpair / disconnect a cabinet ─────────────────────────────
   Future<String?> deleteCabinet(String cabinetId) async {
     try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
       await _cabinetsRef.doc(cabinetId).delete();
-      await refreshCabinets();
+      if (userId != null) {
+        await _firestore.collection('users').doc(userId).update({
+          'cabinetId': FieldValue.delete(),
+        });
+      }
+
+      notifyListeners();
       return null;
     } catch (e) {
       return 'Failed to delete cabinet: $e';
