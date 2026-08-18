@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/app_colors.dart';
 import '../../../core/widgets.dart';
 import '../cabinet_provider.dart';
+import '../../auth/auth_provider.dart';
 import '../models/cabinet.dart';
 import '../pairing/find_cabinet_screen.dart';
 import '../widgets/cabinet_list_tile.dart';
@@ -37,7 +38,11 @@ class CabinetsListScreen extends StatelessWidget {
     final provider = context.watch<CabinetProvider>();
     final cabinets = provider.cabinets;
 
+    final cabinetId = context.read<AuthProvider>().profile?['cabinetId'];
+    final userCabinets = cabinets.where((c) => c.cabinetId == cabinetId);
+
     return Scaffold(
+      appBar: AppBar(title: const Text('Cabinets')),
       backgroundColor: AppColors.background,
       // floatingActionButton: cabinets.isEmpty
       //     ? null
@@ -60,21 +65,12 @@ class CabinetsListScreen extends StatelessWidget {
               : ListView(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 90),
                   children: [
-                    Text(
-                      'My Cabinets',
-                      style: GoogleFonts.poppins(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    if (cabinets.isEmpty)
+                    if (userCabinets.isEmpty)
                       _EmptyCabinetsView(
                         onFindCabinet: () => _openFindCabinet(context),
                       )
                     else
-                      for (final cabinet in cabinets)
+                      for (final cabinet in userCabinets)
                         CabinetListTile(
                           cabinet: cabinet,
                           onTap: () => _openDetail(context, cabinet),

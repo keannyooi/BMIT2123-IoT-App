@@ -76,6 +76,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final logsProvider = context.watch<LogsProvider>();
     final cabinetId = auth.profile?['cabinetId'];
     final cabinets = provider.cabinets;
+    final userCabinets = cabinets.where((c) => c.cabinetId == cabinetId);
 
     // Environmental graph data preparation: last 7 days including today
     final telemetry = logsProvider.telemetryLogs;
@@ -112,6 +113,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return Scaffold(
+      appBar: AppBar(title: const Text('Dashboard')),
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Stack(
@@ -131,24 +133,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
                       children: [
-                        Text(
-                          'Dashboard',
-                          style: GoogleFonts.poppins(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Overview of every cabinet paired to this application.',
-                          style: GoogleFonts.poppins(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        if (cabinets.isEmpty)
+                        if (userCabinets.isEmpty)
                           EmptyState(
                             icon: Icons.dashboard_outlined,
                             title: 'No Cabinets Yet',
@@ -159,7 +144,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              for (final cabinet in cabinets)
+                              for (final cabinet in userCabinets)
                                 CabinetListTile(cabinet: cabinet, showChevron: false),
                               const SizedBox(height: 32),
                               Text(

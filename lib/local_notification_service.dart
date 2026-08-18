@@ -42,7 +42,14 @@ class LocalNotificationService {
     required String body,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool('push_notification') != true) return;
+    final isEnabled = prefs.getBool('push_notification') ?? true; // Default to true if not set
+    
+    if (!isEnabled) {
+      print('LocalNotificationService: Notifications are disabled in app settings.');
+      return;
+    }
+
+    print('LocalNotificationService: Showing notification - $title');
 
     const details = NotificationDetails(
       android: AndroidNotificationDetails(

@@ -14,49 +14,64 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
+  late AuthProvider _auth;
+  bool _isSubscribed = false;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final userId = context.read<AuthProvider>().currentUser?.uid;
-      if (userId != null) {
-        context.read<NotificationProvider>().subscribeToNotifications(userId);
-      }
-    });
+    _auth = context.read<AuthProvider>();
+    _auth.addListener(_onAuthStatusChanged);
+    
+    // Check immediately if profile is already loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) => _onAuthStatusChanged());
+  }
+
+  @override
+  void dispose() {
+    _auth.removeListener(_onAuthStatusChanged);
+    super.dispose();
+  }
+
+  void _onAuthStatusChanged() {
+    if (!mounted || _isSubscribed) return;
+    
+    final userId = _auth.currentUser?.uid;
+    final cabinetId = _auth.profile?['cabinetId'];
+
+    if (userId != null && cabinetId != null) {
+      _isSubscribed = true;
+      context.read<NotificationProvider>().subscribeToNotifications(userId, cabinetId);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<NotificationProvider>();
-    final auth = context.read<AuthProvider>();
+    final auth = context.watch<AuthProvider>();
     final userId = auth.currentUser?.uid;
+    final cabinetId = auth.profile?['cabinetId'];
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notifications'),
+        leading: provider.unreadCount > 0
+            ? IconButton(
+                icon: const Icon(Icons.mark_chat_read_outlined, color: AppColors.background),
+                onPressed: () {
+                  if (cabinetId != null) {
+                    provider.markAllAsRead(cabinetId);
+                  }
+                },
+              )
+            : null,
         actions: [
-          if (provider.unreadCount > 0)
-            TextButton(
-              onPressed: () {
-                if (userId != null) {
-                  provider.markAllAsRead(auth.profile?['cabinetId']);
-                }
-              },
-              child: Text(
-                'Mark all as read',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
           if (provider.notifications.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_sweep_outlined, color: AppColors.error),
               onPressed: () {
-                if (userId != null) {
-                  _showClearAllConfirmation(context, provider, auth.profile?['cabinetId']);
+                if (cabinetId != null) {
+                  _showClearAllConfirmation(context, provider, cabinetId);
                 }
               },
             ),

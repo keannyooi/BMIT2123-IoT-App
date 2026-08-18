@@ -35,7 +35,7 @@ class AppNotification {
     }
 
     return AppNotification(
-      id: map['notificationId'] ?? '',
+      id: id,
       cabinetId: map['cabinetId'] ?? '',
       title: map['title'] ?? '',
       message: map['message'] ?? '',
@@ -62,7 +62,7 @@ class NotificationProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  Future<void> subscribeToNotifications(String userId) async {
+  Future<void> subscribeToNotifications(String userId, String cabinetId) async {
     _subscription?.cancel();
     _fcmSubscription?.cancel();
     _tokenRefreshSubscription?.cancel();
@@ -78,6 +78,13 @@ class NotificationProvider extends ChangeNotifier {
         sound: true,
         provisional: true,
       );
+
+      // Ensure foreground notifications are presented by the OS
+      await _messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
     } catch (e) {
       debugPrint('Error requesting notification permissions: $e');
     }
@@ -88,6 +95,7 @@ class NotificationProvider extends ChangeNotifier {
       if (token != null) {
         await _updateFcmToken(userId, token);
       }
+      debugPrint('FCM TOKEN: $token');
 
       // Listen for token refreshes
       _tokenRefreshSubscription = _messaging.onTokenRefresh.listen((newToken) {
@@ -99,27 +107,25 @@ class NotificationProvider extends ChangeNotifier {
 
     // 3. Listen for Foreground Messages
     _fcmSubscription = FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      debugPrint('Foreground message received: ${message.notification?.title}');
+      debugPrint('--- FCM Foreground Message Received ---');
+      debugPrint('Data: ${message.data}');
+      debugPrint('Notification: ${message.notification?.title}');
 
-      final notification = message.notification;
-      if (notification == null) {
-        return;
+      // Extract title/body from notification OR data payload
+      String? title = message.notification?.title ?? message.data['title'];
+      String? body = message.notification?.body ?? message.data['body'];
+
+      if (title != null || body != null) {
+        LocalNotificationService.instance.show(
+          title: title ?? 'Medicine Cabinet',
+          body: body ?? 'New cabinet notification',
+        );
       }
-
-      LocalNotificationService.instance.show(
-        title:
-        notification.title ??
-            'Medicine Cabinet',
-        body:
-        notification.body ??
-            'New cabinet notification',
-      );
     });
 
     // 4. Handle notification clicks when app is in background but not terminated
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('Notification caused app to open from background: ${message.data}');
-      // Handle navigation if needed
     });
 
     // 5. Check for initial message (app opened from terminated state)
@@ -132,6 +138,7 @@ class NotificationProvider extends ChangeNotifier {
     // 6. Subscribe to the Firestore notifications collection
     _subscription = _firestore
         .collection('notifications')
+        .where('cabinetId', isEqualTo: cabinetId)
         .orderBy('timestamp', descending: true)
         .snapshots()
         .listen((snapshot) {
