@@ -141,6 +141,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     double avgTemp = 0, maxTemp = -999, minTemp = 999;
     double avgHum = 0, maxHum = -999, minHum = 999;
+    Duration timeOutsideRange = Duration.zero;
 
     if (_selectedReport == ReportType.activity || _selectedReport == ReportType.denied) {
       totalAttempts = filteredData.length;
@@ -169,6 +170,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
         }
         avgTemp = sumTemp / monthTelemetry.length;
         avgHum = sumHum / monthTelemetry.length;
+
+        // Calculate accumulative time outside range 18-28°C
+        final sorted = monthTelemetry.toList()..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+        for (int i = 0; i < sorted.length - 1; i++) {
+          if (sorted[i].temperature < 18 || sorted[i].temperature > 28) {
+            timeOutsideRange += sorted[i+1].timestamp.difference(sorted[i].timestamp);
+          }
+        }
       }
     }
 
@@ -239,7 +248,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     else if (_selectedReport == ReportType.denied)
                       _buildDeniedStatsCard(totalAttempts, mostRepeatedRfid)
                     else
-                      _buildEnvironmentalStatsTable(avgTemp, maxTemp, minTemp, avgHum, maxHum, minHum),
+                      _buildEnvironmentalStatsTable(avgTemp, maxTemp, minTemp, avgHum, maxHum, minHum, timeOutsideRange),
                     
                     const SizedBox(height: 20),
 
@@ -581,7 +590,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Widget _buildEnvironmentalStatsTable(double avgT, double maxT, double minT, double avgH, double maxH, double minH) {
+  Widget _buildEnvironmentalStatsTable(double avgT, double maxT, double minT, double avgH, double maxH, double minH, Duration timeOutside) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -594,10 +603,27 @@ class _ReportsScreenState extends State<ReportsScreen> {
             const Divider(height: 20),
             _buildStatRow('Average Humidity', '${avgH.toStringAsFixed(1)}%', isBold: true, valueColor: Colors.blue),
             _buildStatRow('Humidity Range', '${minH == 999 ? 0 : minH.toStringAsFixed(1)}% - ${maxH == -999 ? 0 : maxH.toStringAsFixed(1)}%'),
+            const Divider(height: 20),
+            _buildStatRow('Recommended Temp. Range', '18 - 28°C', isBold: false),
+            _buildStatRow('Total Time Outside Range', _formatDuration(timeOutside), isBold: true, valueColor: timeOutside.inMinutes > 0 ? AppColors.error : AppColors.success),
           ],
         ),
       ),
     );
+  }
+
+  String _formatDuration(Duration duration) {
+    if (duration.inSeconds == 0) return '0m';
+    final days = duration.inDays;
+    final hours = duration.inHours.remainder(24);
+    final minutes = duration.inMinutes.remainder(60);
+    
+    List<String> parts = [];
+    if (days > 0) parts.add('${days}d');
+    if (hours > 0) parts.add('${hours}h');
+    if (minutes > 0) parts.add('${minutes}m');
+    
+    return parts.isEmpty ? '<1m' : parts.join(' ');
   }
 
   Widget _buildDualLineGraph(List<double> temp, List<double> hum, int days) {

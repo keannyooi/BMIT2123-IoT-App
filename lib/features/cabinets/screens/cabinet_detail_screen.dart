@@ -41,7 +41,13 @@ class _CabinetDetailScreenState extends State<CabinetDetailScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Cabinet Details'),
+        title: Text(
+            'Cabinet Details',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            )
+        ),
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
