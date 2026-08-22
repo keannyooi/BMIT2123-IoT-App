@@ -83,7 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   child: const Icon(
-                    Icons.eco,
+                    Icons.inventory_2,
                     color: AppColors.primary,
                     size: 50,
                   ),
@@ -101,7 +101,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Join us in managing waste responsibly',
+                  'Register an account to pair your Smart Medicine Cabinet to your phone!',
                   style: GoogleFonts.poppins(
                     fontSize: 13,
                     color: AppColors.textSecondary,

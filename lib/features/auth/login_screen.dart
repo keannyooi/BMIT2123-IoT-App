@@ -77,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   child: const Icon(
-                    Icons.eco,
+                    Icons.inventory_2,
                     color: AppColors.primary,
                     size: 50,
                   ),
@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // ── Title ─────────────────────────────────────
                 Text(
-                  'Welcome Back! Waste Tracker',
+                  'Welcome Back!',
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
